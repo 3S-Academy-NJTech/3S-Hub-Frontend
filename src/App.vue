@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import Home from './pages/Home.vue'
+// Vue Router will handle component rendering
 </script>
 
 <template>
-  <Home />
+  <router-view />
 </template>
 
 <style>

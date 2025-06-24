@@ -15,6 +15,7 @@ export const useUserStore = defineStore('user', () => {
   const userConcern = computed(() => currentUser.value?.userConcern || 0)
   const userFans = computed(() => currentUser.value?.userFans || 0)
   const userTime = computed(() => currentUser.value?.userTime || '')
+  const userId = computed(() => currentUser.value?.userId || 0)
 
   // Actions
   const login = (user: User) => {
@@ -46,6 +47,7 @@ export const useUserStore = defineStore('user', () => {
     userConcern,
     userFans,
     userTime,
+    userId,
     login,
     logout,
     updateUser

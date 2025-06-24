@@ -4,7 +4,7 @@
     <div class="header-content">
       <!-- 网站LOGO -->
       <div class="logo">
-        <img src="/title.jpg" alt="3S-Hub" class="logo-image" />
+        <img src="/title.jpg" alt="3S-Hub" class="logo-image" @click="goToHome" />
       </div>
       
       <!-- 头部操作区域 -->
@@ -23,7 +23,7 @@
         
         <!-- 用户操作链接 -->
         <div class="user-actions">
-          <a href="#" class="action-link">首页</a>
+          <button class="action-link" @click="goToHome">首页</button>
         </div>
       </div>
     </div>
@@ -32,6 +32,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+// 路由实例
+const router = useRouter()
 
 // 搜索关键词
 const searchKeyword = ref('')
@@ -42,6 +46,11 @@ const handleSearch = () => {
     console.log('搜索:', searchKeyword.value)
     // TODO: 实现搜索功能
   }
+}
+
+// 跳转到首页
+const goToHome = () => {
+  router.push('/')
 }
 </script>
 
@@ -146,6 +155,9 @@ const handleSearch = () => {
   padding: 6px 12px;
   border-radius: 4px;
   transition: all 0.2s ease;
+  background: transparent;
+  border: none;
+  cursor: pointer;
 }
 
 .action-link:hover {

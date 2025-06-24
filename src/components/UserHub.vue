@@ -59,6 +59,7 @@
 
         <div class="actions">
           <button @click="handleHome" class="action-btn home-btn">主页</button>
+          <button @click="handleCreatePost" class="action-btn create-post-btn">发帖</button>
           <button @click="handleLogout" class="action-btn logout-btn">登出</button>
         </div>
       </div>
@@ -70,7 +71,7 @@
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
-const emit = defineEmits(['show-login', 'show-register', 'logout', 'home'])
+const emit = defineEmits(['show-login', 'show-register', 'logout', 'home', 'create-post'])
 
 const handleLogin = () => {
   emit('show-login')
@@ -86,6 +87,11 @@ const handleLogout = () => {
 
 const handleHome = () => {
   emit('home')
+}
+
+const handleCreatePost = () => {
+  // 在新标签页中打开发帖页面
+  window.open('/create-post', '_blank')
 }
 
 const formatDateTime = (dateString: string) => {
@@ -336,6 +342,17 @@ const formatDateTime = (dateString: string) => {
 
 .logout-btn:hover {
   background: #e8e8e8;
+  color: #333;
+  border-color: #ccc;
+}
+
+.create-post-btn {
+  background: #f8f9fa;
+  color: #666;
+}
+
+.create-post-btn:hover {
+  background: #e9ecef;
   color: #333;
   border-color: #ccc;
 }
