@@ -19,8 +19,15 @@
           </div>
         </div>
         <div class="post-stats">
-          <div class="like-count" @click="handleLike(post.id)">
-            <span class="like-icon">❤️</span>
+          <div 
+            class="like-count" 
+            :class="{ 
+              'liked': post.isLiked, 
+              'liking': likingPosts.has(post.id) 
+            }"
+            @click="handleLike(post.id)"
+          >
+            <span class="like-icon">{{ post.isLiked ? '❤️' : '🤍' }}</span>
             <span class="count">{{ formatCount(post.likeCount) }}</span>
           </div>
         </div>
@@ -46,8 +53,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { POST_CATEGORIES } from '@/constants/categories'
+import { articleApi } from '@/api/article'
+import { useUserStore } from '@/stores/user'
 
 export interface FeedPost {
   id: number
@@ -57,6 +66,7 @@ export interface FeedPost {
   label: string
   likeCount: number
   content?: string
+  isLiked?: boolean // 当前用户是否已点赞
 }
 
 interface Props {
@@ -75,8 +85,11 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<Emits>()
+const userStore = useUserStore()
 
 const feedListRef = ref<HTMLElement>()
+const likingPosts = ref<Set<number>>(new Set()) // 记录正在点赞的帖子
+const isInitialized = ref(false) // 记录是否已初始化过
 
 const handleScroll = () => {
   if (!feedListRef.value || props.loading || props.noMore) return
@@ -150,11 +163,136 @@ const viewAuthor = (username: string) => {
   // TODO: 实现作者主页跳转
 }
 
-// 点赞功能
-const handleLike = (postId: number) => {
-  console.log('点赞文章:', postId)
-  // TODO: 实现点赞功能
+// 点赞/取消点赞功能 - 使用新的toggle API
+const handleLike = async (postId: number) => {
+  // 检查用户是否登录
+  if (!userStore.isLoggedIn) {
+    console.log('请先登录')
+    // TODO: 跳转到登录页面或显示登录模态框
+    return
+  }
+
+  // 防止重复点击
+  if (likingPosts.value.has(postId)) return
+  
+  likingPosts.value.add(postId)
+  
+  // 找到对应的帖子
+  const post = props.posts.find(p => p.id === postId)
+  if (!post) {
+    likingPosts.value.delete(postId)
+    return
+  }
+  
+  // 保存原始状态用于回滚
+  const originalLikeCount = post.likeCount
+  const originalIsLiked = post.isLiked || false
+  
+  // 乐观更新UI
+  if (originalIsLiked) {
+    post.likeCount -= 1
+    post.isLiked = false
+  } else {
+    post.likeCount += 1
+    post.isLiked = true
+  }
+  
+  try {
+    // 使用新的toggle API
+    const result = await articleApi.toggleLikeArticle(userStore.userId, postId)
+    
+    if (result.success) {
+      // API成功，更新最终状态
+      post.isLiked = result.isLiked
+      
+      // 获取最新的点赞数
+      const latestCount = await articleApi.getArticleLikeCount(postId)
+      post.likeCount = latestCount
+    } else {
+      // API调用失败，回滚UI状态
+      post.likeCount = originalLikeCount
+      post.isLiked = originalIsLiked
+      console.error('点赞操作失败')
+    }
+  } catch (error) {
+    // 出错时回滚UI状态
+    post.likeCount = originalLikeCount
+    post.isLiked = originalIsLiked
+    console.error('点赞请求失败:', error)
+  } finally {
+    likingPosts.value.delete(postId)
+  }
 }
+
+// 初始化帖子点赞状态和点赞数的方法
+const initializeLikeStatus = async () => {
+  if (!userStore.isLoggedIn || props.posts.length === 0) return
+  
+  try {
+    console.log('开始初始化点赞状态，帖子数量:', props.posts.length)
+    
+    // 批量检查用户对这些文章的点赞状态和最新点赞数
+    const promises = props.posts.map(async (post) => {
+      try {
+        const [isLiked, likeCount] = await Promise.all([
+          articleApi.checkLikeStatus(userStore.userId, post.id),
+          articleApi.getArticleLikeCount(post.id)
+        ])
+        
+        console.log(`文章${post.id}: 点赞状态=${isLiked}, 点赞数=${likeCount}`)
+        
+        post.isLiked = isLiked
+        post.likeCount = likeCount
+      } catch (error) {
+        console.error(`初始化文章${post.id}的点赞状态失败:`, error)
+      }
+    })
+    
+    await Promise.all(promises)
+    isInitialized.value = true
+    console.log('点赞状态初始化完成')
+  } catch (error) {
+    console.error('初始化点赞状态失败:', error)
+  }
+}
+
+// 监听posts变化，当数据加载完成后初始化点赞状态
+watch(
+  () => props.posts,
+  (newPosts) => {
+    if (newPosts.length > 0 && userStore.isLoggedIn && !isInitialized.value) {
+      console.log('检测到帖子数据变化，开始初始化点赞状态')
+      initializeLikeStatus()
+    }
+  },
+  { immediate: true, deep: true }
+)
+
+// 监听用户登录状态变化
+watch(
+  () => userStore.isLoggedIn,
+  (isLoggedIn) => {
+    if (isLoggedIn && props.posts.length > 0 && !isInitialized.value) {
+      console.log('检测到用户登录，开始初始化点赞状态')
+      initializeLikeStatus()
+    } else if (!isLoggedIn) {
+      // 用户登出时重置状态
+      isInitialized.value = false
+      props.posts.forEach(post => {
+        post.isLiked = false
+      })
+    }
+  }
+)
+
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll)
+  // 移除这里的初始化调用，改为使用watch监听
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+})
 </script>
 
 <style scoped>
@@ -288,13 +426,20 @@ const handleLike = (postId: number) => {
   transform: scale(1.05);
 }
 
-.like-icon {
-  font-size: 12px;
+.like-count.liked {
+  background: #ffe6e6;
+  color: #e91e63;
 }
 
-.count {
-  color: #666;
-  font-weight: 600;
+.like-count.liked .count {
+  color: #e91e63;
+  font-weight: 700;
+}
+
+.like-count.liking {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* 加载状态 */
