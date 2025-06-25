@@ -3,7 +3,7 @@
     <div class="home-container">
       <!-- 左侧内容区域 -->
       <div class="main-content">
-        <FeedList :posts="posts" :loading="loading" :no-more="noMore" />
+        <FeedList :posts="posts" :loading="loading" :no-more="noMore" @load-more="loadMorePosts" />
       </div>
 
       <!-- 右侧固定区域 -->
@@ -30,6 +30,8 @@ import UserHub from '@/components/UserHub.vue'
 import Login from '@/components/Login.vue'
 import Register from '@/components/Register.vue'
 import { useUserStore } from '@/stores/user'
+import { getNewArticles, type ViewArtAndUser } from '@/api/article'
+import { POST_CATEGORIES } from '@/constants/categories'
 
 // Use Pinia store
 const userStore = useUserStore()
@@ -37,10 +39,63 @@ const userStore = useUserStore()
 const posts = ref<FeedPost[]>([])
 const loading = ref(false)
 const noMore = ref(false)
+const currentPage = ref(0)
+const pageSize = 20
+
+// 文章类型映射 - 从常量文件获取
+const articleTypeMap: Record<number, string> = POST_CATEGORIES.reduce((map, category) => {
+  map[parseInt(category.value)] = category.label
+  return map
+}, {} as Record<number, string>)
 
 // Modal state
 const loginModalVisible = ref(false)
 const registerModalVisible = ref(false)
+
+// 转换后端数据为前端显示格式
+const transformArticleData = (items: ViewArtAndUser[]): FeedPost[] => {
+  return items.map(item => ({
+    id: item.article.artId,
+    title: item.article.artTitle,
+    username: item.user.userName,
+    publishTime: item.article.artCreTime,
+    label: articleTypeMap[item.article.artTypeId] || '其他',
+    likeCount: item.article.artLikeNum || 0,
+    content: item.article.artContent
+  }))
+}
+
+// 加载文章数据
+const loadArticles = async (page: number = 0, append: boolean = false) => {
+  if (loading.value) return
+  
+  loading.value = true
+  try {
+    const response = await getNewArticles({ page, size: pageSize })
+    const newPosts = transformArticleData(response.content)
+    
+    if (append) {
+      posts.value.push(...newPosts)
+    } else {
+      posts.value = newPosts
+    }
+    
+    // 更新分页状态
+    noMore.value = response.last
+    currentPage.value = page
+  } catch (error) {
+    console.error('加载文章失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 加载更多文章
+const loadMorePosts = () => {
+  if (!noMore.value && !loading.value) {
+    loadArticles(currentPage.value + 1, true)
+  }
+}
 
 // Modal methods
 const showLogin = () => {
@@ -71,6 +126,7 @@ const closeModals = () => {
 const handleLoginSuccess = (data: any) => {
   console.log('登录成功:', data)
   userStore.login(data.user)
+  closeModals()
 }
 
 const handleRegisterSuccess = (userData: any) => {
@@ -84,6 +140,7 @@ const handleLogout = () => {
 
 // 初始加载
 onMounted(() => {
+  loadArticles()
 })
 </script>
 

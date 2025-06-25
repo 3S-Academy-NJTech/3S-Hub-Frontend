@@ -3,25 +3,25 @@
     <!-- 帖子列表 -->
     <div class="posts-list">
       <div v-for="post in posts" :key="post.id" class="post-item">
-        <div class="post-avatar">
-          <img :src="post.userAvatar" :alt="post.username" />
-        </div>
         <div class="post-content">
           <div class="post-title">
-            <a href="#" class="title-link">{{ post.title }}</a>
+            <a href="#" class="title-link" @click.prevent="viewPost(post.id)">{{ post.title }}</a>
+          </div>
+          <div class="post-excerpt" v-if="post.content">
+            {{ truncateContent(post.content) }}
           </div>
           <div class="post-meta">
-            <span class="post-label">{{ post.label }}</span>
+            <span class="post-label" :class="`label-${getLabelClass(post.label)}`">{{ post.label }}</span>
             <span class="bullet">•</span>
-            <a href="#" class="author-link">{{ post.username }}</a>
+            <a href="#" class="author-link" @click.prevent="viewAuthor(post.username)">{{ post.username }}</a>
             <span class="bullet">•</span>
             <span class="post-time">{{ post.publishTime }}</span>
           </div>
         </div>
         <div class="post-stats">
-          <div class="like-count">
+          <div class="like-count" @click="handleLike(post.id)">
             <span class="like-icon">❤️</span>
-            <span class="count">{{ post.likeCount }}</span>
+            <span class="count">{{ formatCount(post.likeCount) }}</span>
           </div>
         </div>
       </div>
@@ -47,15 +47,16 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { POST_CATEGORIES } from '@/constants/categories'
 
 export interface FeedPost {
   id: number
   title: string
   username: string
-  userAvatar: string
   publishTime: string
   label: string
   likeCount: number
+  content?: string
 }
 
 interface Props {
@@ -95,6 +96,65 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
 })
+
+// 截取内容预览
+const truncateContent = (content: string, maxLength: number = 120): string => {
+  if (!content) return ''
+  return content.length > maxLength ? content.substring(0, maxLength) + '...' : content
+}
+
+// 获取标签样式类 - 使用constants中的映射
+const getLabelClass = (label: string): string => {
+  const labelMap: Record<string, string> = POST_CATEGORIES.reduce((map, category) => {
+    const labelKey = category.label
+    let styleClass = ''
+    
+    switch (labelKey) {
+      case '技术':
+        styleClass = 'tech'
+        break
+      case '问答':
+        styleClass = 'qa'
+        break
+      case '校园生活':
+        styleClass = 'campus'
+        break
+      default:
+        styleClass = 'other'
+    }
+    
+    map[labelKey] = styleClass
+    return map
+  }, {} as Record<string, string>)
+  
+  return labelMap[label] || 'other'
+}
+
+// 格式化数字显示
+const formatCount = (count: number): string => {
+  if (count >= 1000) {
+    return (count / 1000).toFixed(1) + 'k'
+  }
+  return count.toString()
+}
+
+// 查看文章详情
+const viewPost = (postId: number) => {
+  console.log('查看文章:', postId)
+  // TODO: 实现文章详情跳转
+}
+
+// 查看作者信息
+const viewAuthor = (username: string) => {
+  console.log('查看作者:', username)
+  // TODO: 实现作者主页跳转
+}
+
+// 点赞功能
+const handleLike = (postId: number) => {
+  console.log('点赞文章:', postId)
+  // TODO: 实现点赞功能
+}
 </script>
 
 <style scoped>
@@ -125,13 +185,6 @@ onUnmounted(() => {
   border-bottom: none;
 }
 
-.post-avatar img {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
 .post-content {
   flex: 1;
   min-width: 0;
@@ -154,6 +207,13 @@ onUnmounted(() => {
   color: #4a90e2;
 }
 
+.post-excerpt {
+  margin: 8px 0;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
 .post-meta {
   display: flex;
   align-items: center;
@@ -166,9 +226,30 @@ onUnmounted(() => {
 .post-label {
   background: #f0f0f0;
   color: #666;
-  padding: 2px 6px;
-  border-radius: 3px;
+  padding: 2px 8px;
+  border-radius: 12px;
   font-size: 11px;
+  font-weight: 500;
+}
+
+.label-tech {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.label-qa {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.label-campus {
+  background: #e8f5e8;
+  color: #388e3c;
+}
+
+.label-other {
+  background: #f5f5f5;
+  color: #757575;
 }
 
 .bullet {
@@ -191,6 +272,8 @@ onUnmounted(() => {
 }
 
 .like-count {
+  cursor: pointer;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -198,6 +281,11 @@ onUnmounted(() => {
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 12px;
+}
+
+.like-count:hover {
+  background: #ffe6e6;
+  transform: scale(1.05);
 }
 
 .like-icon {
@@ -241,11 +329,6 @@ onUnmounted(() => {
   .post-item {
     gap: 8px;
     padding: 12px;
-  }
-  
-  .post-avatar img {
-    width: 40px;
-    height: 40px;
   }
   
   .title-link {
