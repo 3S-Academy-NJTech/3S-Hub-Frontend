@@ -20,11 +20,10 @@
         <h1 class="article-title">{{ articleData.article.artTitle }}</h1>
         <div class="article-meta">
           <div class="author-info">
-            <img 
-              :src="articleData.user.userImg || '/logo.svg'" 
-              :alt="articleData.user.userName"
-              class="author-avatar"
-            >
+            <UserAvatar 
+              :username="articleData.user.userName" 
+              size="medium" 
+            />
             <div class="author-details">
               <span class="author-name">{{ articleData.user.userName }}</span>
               <span class="publish-time">{{ formatTime(articleData.article.artCreTime) }}</span>
@@ -83,6 +82,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { articleApi, type ViewArtAndUser } from '@/api/article'
 import { useUserStore } from '@/stores/user'
+import UserAvatar from '@/components/UserAvatar.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -321,14 +321,6 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.author-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #f0f0f0;
 }
 
 .author-details {

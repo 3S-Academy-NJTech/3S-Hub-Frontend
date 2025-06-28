@@ -10,10 +10,7 @@ export const useUserStore = defineStore('user', () => {
   // Getters
   const userName = computed(() => currentUser.value?.userName || '')
   const userEmail = computed(() => currentUser.value?.userEmail || '')
-  const userAvatar = computed(() => currentUser.value?.userImg || 'default.jpg')
   const userShow = computed(() => currentUser.value?.userShow || '')
-  const userConcern = computed(() => currentUser.value?.userConcern || 0)
-  const userFans = computed(() => currentUser.value?.userFans || 0)
   const userTime = computed(() => currentUser.value?.userTime || '')
   const userId = computed(() => currentUser.value?.userId || 0)
 
@@ -42,10 +39,7 @@ export const useUserStore = defineStore('user', () => {
     isLoggedIn,
     userName,
     userEmail,
-    userAvatar,
     userShow,
-    userConcern,
-    userFans,
     userTime,
     userId,
     login,

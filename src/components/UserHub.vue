@@ -21,13 +21,7 @@
     <div v-else class="profile-container">
       <div class="profile-card">
         <div class="profile-header">
-          <div class="avatar">
-            <img v-if="userStore.userAvatar !== 'default.jpg'" 
-                 :src="userStore.userAvatar" 
-                 :alt="userStore.userName" 
-                 class="avatar-img" />
-            <div v-else class="avatar-icon">{{ userStore.userName.charAt(0)?.toUpperCase() || '+' }}</div>
-          </div>
+          <UserAvatar :username="userStore.userName || 'Unknown'" size="large" />
           <div class="user-info">
             <span class="username">{{ userStore.userName || 'Unknown' }}</span>
             <span class="user-show">{{ userStore.userShow || '这个人很懒，什么都没有留下' }}</span>
@@ -57,6 +51,7 @@
 
 <script setup lang="ts">
 import { useUserStore } from '@/stores/user'
+import UserAvatar from './UserAvatar.vue'
 
 const userStore = useUserStore()
 const emit = defineEmits(['show-login', 'show-register', 'logout', 'home', 'create-post'])
@@ -184,31 +179,7 @@ const formatDateTime = (dateString: string) => {
   align-items: center;
   padding: 20px 20px 15px 20px;
   border-bottom: 1px solid #eee;
-}
-
-.avatar {
-  width: 45px;
-  height: 45px;
-  background: #8b5cf6;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 15px;
-  flex-shrink: 0;
-}
-
-.avatar-icon {
-  color: white;
-  font-size: 22px;
-  font-weight: bold;
-}
-
-.avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 4px;
+  gap: 15px;
 }
 
 .user-info {
