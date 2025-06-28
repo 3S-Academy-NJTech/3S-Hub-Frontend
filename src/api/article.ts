@@ -8,16 +8,10 @@ export interface CreateArticleRequest {
 }
 
 export const createNewPost = async (data: CreateArticleRequest) => {
-  const formData = new FormData()
-  formData.append('userId', data.userId.toString())
-  formData.append('title', data.title)
-  formData.append('text', data.text)
-  formData.append('select', data.select.toString())
-
   try {
-    const response = await axios.post('/api/articles/new-post', formData, {
+    const response = await axios.post('/api/articles/new-post', data, {
       headers: {
-        'Content-Type': 'multipart/form-data'
+        'Content-Type': 'application/json'
       }
     })
     return response.data
@@ -190,12 +184,24 @@ export const getArticleLikeCount = async (articleId: number): Promise<number> =>
   }
 }
 
+// 获取文章详情的API方法
+export const getArticleDetail = async (articleId: number): Promise<ViewArtAndUser | null> => {
+  try {
+    const response = await axios.get<ViewArtAndUser>(`/api/articles/${articleId}`)
+    return response.data
+  } catch (error) {
+    console.error('获取文章详情失败:', error)
+    return null
+  }
+}
+
 // 导出文章API对象
 export const articleApi = {
   likeArticle,
   unlikeArticle,
   toggleLikeArticle,
   checkLikeStatus,
-  getArticleLikeCount
+  getArticleLikeCount,
+  getArticleDetail
 }
 

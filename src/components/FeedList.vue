@@ -54,6 +54,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { POST_CATEGORIES } from '@/constants/categories'
 import { articleApi } from '@/api/article'
 import { useUserStore } from '@/stores/user'
@@ -86,6 +87,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 const userStore = useUserStore()
+const router = useRouter()
 
 const feedListRef = ref<HTMLElement>()
 const likingPosts = ref<Set<number>>(new Set()) // 记录正在点赞的帖子
@@ -153,8 +155,7 @@ const formatCount = (count: number): string => {
 
 // 查看文章详情
 const viewPost = (postId: number) => {
-  console.log('查看文章:', postId)
-  // TODO: 实现文章详情跳转
+  router.push({ name: 'ArticleDetail', params: { id: postId.toString() } })
 }
 
 // 查看作者信息

@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import Home from '@/pages/Home.vue'
 import CreatePost from '@/pages/CreatePost.vue'
+import ArticleDetail from '@/pages/ArticleDetail.vue'
 
 const routes = [
   {
@@ -14,6 +15,12 @@ const routes = [
     name: 'CreatePost',
     component: CreatePost,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/article/:id',
+    name: 'ArticleDetail',
+    component: ArticleDetail,
+    props: true
   }
 ]
 
@@ -23,7 +30,7 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   // 检查路由是否需要登录权限
   if (to.meta.requiresAuth) {
     const userStore = useUserStore()

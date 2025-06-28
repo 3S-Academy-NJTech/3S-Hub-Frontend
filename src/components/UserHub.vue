@@ -34,18 +34,6 @@
           </div>
         </div>
         
-        <div class="stats">
-          <div class="stat-item">
-            <div class="stat-number">{{ userStore.userConcern }}</div>
-            <div class="stat-label">关注</div>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <div class="stat-number">{{ userStore.userFans }}</div>
-            <div class="stat-label">粉丝</div>
-          </div>
-        </div>
-        
         <div class="user-details">
           <div class="detail-item">
             <span class="detail-label">邮箱</span>
@@ -240,39 +228,6 @@ const formatDateTime = (dateString: string) => {
   font-size: 13px;
   color: #666;
   line-height: 1.3;
-}
-
-.stats {
-  display: flex;
-  align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid #eee;
-  background: #fafafa;
-}
-
-.stat-item {
-  flex: 1;
-  text-align: center;
-}
-
-.stat-number {
-  font-size: 18px;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 6px;
-}
-
-.stat-label {
-  font-size: 13px;
-  color: #666;
-  font-weight: 500;
-}
-
-.stat-divider {
-  width: 1px;
-  height: 35px;
-  background: #ddd;
-  margin: 0 25px;
 }
 
 .user-details {
