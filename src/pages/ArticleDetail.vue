@@ -1,5 +1,11 @@
 <template>
   <div class="article-detail">
+    <!-- 成功提示 -->
+    <div v-if="showSuccessMessage" class="success-message">
+      <span class="success-icon">✅</span>
+      <span>{{ successMessage }}</span>
+    </div>
+
     <!-- 返回按钮 -->
     <div class="back-button">
       <button @click="goBack" class="btn-back">
@@ -30,10 +36,6 @@
             </div>
           </div>
           <div class="article-stats">
-            <span class="stat-item">
-              <span class="stat-icon">👁️</span>
-              <span class="stat-count">{{ formatCount(articleData.article.artView || 0) }}</span>
-            </span>
             <span 
               class="stat-item like-stat" 
               :class="{ 'liked': isLiked, 'liking': isLiking }"
@@ -64,6 +66,59 @@
           <span class="btn-count">({{ formatCount(likeCount) }})</span>
         </button>
       </div>
+
+      <!-- 评论区域 -->
+      <div class="comments-section">
+        <div class="comments-header">
+          <h3 class="comments-title">评论 ({{ comments.length }})</h3>
+        </div>
+
+        <!-- 评论输入框 -->
+        <div class="comment-input-section">
+          <div class="comment-input-header">
+            <UserAvatar :username="userStore.userName || 'Guest'" size="small" />
+            <span class="input-username">{{ userStore.userName || '游客' }}</span>
+          </div>
+          <div class="comment-input-box">
+            <textarea 
+              v-model="commentContent"
+              class="comment-textarea"
+              placeholder="写下你的评论..."
+              rows="3"
+              :disabled="!userStore.isLoggedIn || isSubmittingComment"
+            ></textarea>
+            <div class="comment-input-actions">
+              <button 
+                class="btn-submit" 
+                @click="submitComment"
+                :disabled="!userStore.isLoggedIn || !commentContent.trim() || isSubmittingComment"
+              >
+                {{ isSubmittingComment ? '发布中...' : '发表评论' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 评论列表 -->
+        <div v-if="comments.length > 0" class="comments-list">
+          <div v-for="comment in comments" :key="comment.id" class="comment-item">
+            <div class="comment-avatar">
+              <UserAvatar :username="`User${comment.userId}`" size="small" />
+            </div>
+            <div class="comment-content">
+              <div class="comment-header">
+                <span class="comment-author">用户{{ comment.userId }}</span>
+              </div>
+              <div class="comment-text">{{ comment.content }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 无评论状态 -->
+        <div v-else class="no-comments">
+          <p>暂无评论，快来发表第一条评论吧！</p>
+        </div>
+      </div>
     </div>
 
     <!-- 错误状态 -->
@@ -81,6 +136,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { articleApi, type ViewArtAndUser } from '@/api/article'
+import { commentApi, type CreateCommentRequest, type SimpleCommentDTO } from '@/api/comment'
 import { useUserStore } from '@/stores/user'
 import UserAvatar from '@/components/UserAvatar.vue'
 
@@ -93,6 +149,15 @@ const loading = ref(true)
 const isLiking = ref(false)
 const likeCount = ref(0)
 const isLiked = ref(false)
+const comments = ref<SimpleCommentDTO[]>([])
+
+// 评论相关状态
+const commentContent = ref('')
+const isSubmittingComment = ref(false)
+
+// 成功提示相关状态
+const showSuccessMessage = ref(false)
+const successMessage = ref('')
 
 const articleId = computed(() => {
   const id = route.params.id
@@ -187,6 +252,54 @@ const handleLike = async () => {
   }
 }
 
+// 发布评论
+const submitComment = async () => {
+  if (!userStore.isLoggedIn) {
+    console.log('请先登录')
+    return
+  }
+
+  if (!commentContent.value.trim()) {
+    console.log('评论内容不能为空')
+    return
+  }
+
+  if (isSubmittingComment.value) return
+
+  isSubmittingComment.value = true
+
+  try {
+    const request: CreateCommentRequest = {
+      articleId: articleId.value,
+      userId: userStore.userId,
+      content: commentContent.value.trim()
+    }
+
+    const newComment = await commentApi.createComment(request)
+    
+    // 添加新评论到列表顶部
+    comments.value.unshift(newComment)
+    
+    // 清空输入框
+    commentContent.value = ''
+    
+    // 显示成功提示
+    showSuccessMessage.value = true
+    successMessage.value = '评论发布成功！'
+    
+    // 3秒后隐藏提示
+    setTimeout(() => {
+      showSuccessMessage.value = false
+    }, 3000)
+    
+  } catch (error) {
+    console.error('发布评论失败:', error)
+  } finally {
+    isSubmittingComment.value = false
+  }
+}
+
+
 // 格式化时间
 const formatTime = (timeString: string): string => {
   const date = new Date(timeString)
@@ -241,6 +354,38 @@ onMounted(() => {
   padding: 20px;
   background: white;
   min-height: 100vh;
+}
+
+/* 成功提示样式 */
+.success-message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #4caf50;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+}
+
+.success-icon {
+  font-size: 16px;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 /* 返回按钮 */
@@ -481,6 +626,223 @@ onMounted(() => {
   background: #357abd;
 }
 
+/* 评论区域样式 */
+.comments-section {
+  margin-top: 40px;
+  padding-top: 32px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.comments-header {
+  margin-bottom: 24px;
+}
+
+.comments-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+/* 评论输入框 */
+.comment-input-section {
+  margin-bottom: 32px;
+  padding: 20px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+}
+
+.comment-input-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.input-username {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.comment-input-box {
+  margin-left: 40px;
+}
+
+.comment-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  background: white;
+  box-sizing: border-box;
+}
+
+.comment-textarea:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+.comment-textarea::placeholder {
+  color: #999;
+}
+
+.comment-input-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.btn-submit {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-submit {
+  background: #4a90e2;
+  border: 1px solid #4a90e2;
+  color: white;
+}
+
+.btn-submit:hover {
+  background: #357abd;
+}
+
+.btn-submit:disabled {
+  background: #ccc;
+  border-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* 评论列表 */
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.comment-item {
+  display: flex;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.comment-item:last-child {
+  border-bottom: none;
+}
+
+.comment-avatar {
+  flex-shrink: 0;
+}
+
+.comment-content {
+  flex: 1;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.comment-author {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.comment-time {
+  font-size: 12px;
+  color: #999;
+}
+
+.comment-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  word-wrap: break-word;
+}
+
+/* 回复样式 */
+.replies {
+  margin-top: 16px;
+  padding-left: 20px;
+  border-left: 2px solid #f0f0f0;
+}
+
+.reply-item {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.reply-avatar {
+  flex-shrink: 0;
+}
+
+.reply-content {
+  flex: 1;
+}
+
+.reply-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.reply-author {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+}
+
+.reply-time {
+  font-size: 11px;
+  color: #999;
+}
+
+.reply-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.reply-to {
+  color: #4a90e2;
+  font-weight: 500;
+}
+
+.reply-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 无评论状态 */
+.no-comments {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+  font-size: 14px;
+}
+
+.no-comments p {
+  margin: 0;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .article-detail {
@@ -503,5 +865,18 @@ onMounted(() => {
   .content-text {
     font-size: 15px;
   }
+  
+  .comment-input-box {
+    margin-left: 0;
+  }
+  
+  .comment-input-header {
+    margin-bottom: 8px;
+  }
+  
+  .replies {
+    padding-left: 12px;
+  }
 }
 </style>
+

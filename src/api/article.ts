@@ -28,27 +28,17 @@ export interface Article {
   artTitle: string
   artTypeId: number
   artContent: string
-  artCommentId: number | null
   artCreTime: string
-  artView: number | null
-  artComNum: number | null
-  artHotNum: number | null
   artLikeNum: number | null
 }
 
 // 用户接口定义
 export interface User {
   userId: number
-  userPassword: string
   userName: string
   userEmail: string
-  userStatus: string | null
   userTime: string
   userShow: string
-  userBlog: string
-  userImg: string
-  userFans: number | null
-  userConcern: number | null
 }
 
 // 文章和用户组合数据接口

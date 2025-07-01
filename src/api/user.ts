@@ -64,12 +64,6 @@ export interface User {
   userEmail: string
   userTime: string
   userShow: string
-  userBlog: string
-  userImg: string
-  userFans: number | null
-  userConcern: number | null
-  userPassword?: string
-  userStatus?: string | null
 }
 
 export const userLogin = (data: LoginRequest): Promise<User> => {
