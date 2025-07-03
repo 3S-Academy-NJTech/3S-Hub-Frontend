@@ -101,15 +101,16 @@
 
         <!-- 评论列表 -->
         <div v-if="comments.length > 0" class="comments-list">
-          <div v-for="comment in comments" :key="comment.id" class="comment-item">
+          <div v-for="comment in comments" :key="comment.commentId" class="comment-item">
             <div class="comment-avatar">
-              <UserAvatar :username="`User${comment.userId}`" size="small" />
+              <UserAvatar :username="comment.userName" size="small" />
             </div>
             <div class="comment-content">
               <div class="comment-header">
-                <span class="comment-author">用户{{ comment.userId }}</span>
+                <span class="comment-author">{{ comment.userName }}</span>
+                <span class="comment-time">{{ formatTime(comment.commentTime) }}</span>
               </div>
-              <div class="comment-text">{{ comment.content }}</div>
+              <div class="comment-text">{{ comment.commentContent }}</div>
             </div>
           </div>
         </div>
@@ -136,7 +137,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { articleApi, type ViewArtAndUser } from '@/api/article'
-import { commentApi, type CreateCommentRequest, type SimpleCommentDTO } from '@/api/comment'
+import { commentApi, type CreateCommentRequest, type SimpleCommentDTO, getCommentsByArticleId } from '@/api/comment'
 import { useUserStore } from '@/stores/user'
 import UserAvatar from '@/components/UserAvatar.vue'
 
@@ -182,11 +183,27 @@ const loadArticle = async () => {
       if (userStore.isLoggedIn) {
         await checkLikeStatus()
       }
+      
+      // 加载评论列表
+      await loadComments()
     }
   } catch (error) {
     console.error('加载文章失败:', error)
   } finally {
     loading.value = false
+  }
+}
+
+// 加载评论列表
+const loadComments = async () => {
+  if (!articleId.value) return
+  
+  try {
+    const commentsList = await getCommentsByArticleId(articleId.value)
+    comments.value = commentsList
+  } catch (error) {
+    console.error('加载评论失败:', error)
+    comments.value = []
   }
 }
 
@@ -275,13 +292,13 @@ const submitComment = async () => {
       content: commentContent.value.trim()
     }
 
-    const newComment = await commentApi.createComment(request)
-    
-    // 添加新评论到列表顶部
-    comments.value.unshift(newComment)
+    await commentApi.createComment(request)
     
     // 清空输入框
     commentContent.value = ''
+    
+    // 重新加载评论列表
+    await loadComments()
     
     // 显示成功提示
     showSuccessMessage.value = true

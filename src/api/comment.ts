@@ -9,11 +9,16 @@ export interface CreateCommentRequest {
 
 // 简单评论DTO类型
 export interface SimpleCommentDTO {
-  id: number
+  commentId: number
+  commentContent: string
+  commentTime: string
   articleId: number
+  articleTitle: string
   userId: number
-  content: string
-  createTime: string
+  userName: string
+  parentCommentId: number | null
+  parentCommentContent: string | null
+  parentCommentUserName: string | null
 }
 
 /**
@@ -35,7 +40,27 @@ export const createComment = async (request: CreateCommentRequest): Promise<Simp
   }
 }
 
+/**
+ * 获取指定文章的所有评论
+ * @param articleId 文章ID
+ * @returns Promise<SimpleCommentDTO[]>
+ */
+export const getCommentsByArticleId = async (articleId: number): Promise<SimpleCommentDTO[]> => {
+  try {
+    const response = await axios.get(`/api/comments/article/${articleId}`, {
+      headers: {
+        'Accept': 'application/json'
+      }
+    })
+    return response.data
+  } catch (error) {
+    console.error('获取文章评论失败:', error)
+    throw error
+  }
+}
+
 // 导出评论API对象
 export const commentApi = {
-  createComment
+  createComment,
+  getCommentsByArticleId
 }
