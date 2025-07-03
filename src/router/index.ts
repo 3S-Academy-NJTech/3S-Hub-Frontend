@@ -3,6 +3,7 @@ import { useUserStore } from '@/stores/user'
 import Home from '@/pages/Home.vue'
 import CreatePost from '@/pages/CreatePost.vue'
 import ArticleDetail from '@/pages/ArticleDetail.vue'
+import UserProfile from '@/pages/UserProfile.vue'
 
 const routes = [
   {
@@ -21,6 +22,12 @@ const routes = [
     name: 'ArticleDetail',
     component: ArticleDetail,
     props: true
+  },
+  {
+    path: '/profile',
+    name: 'UserProfile',
+    component: UserProfile,
+    meta: { requiresAuth: true }
   }
 ]
 

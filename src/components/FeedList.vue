@@ -3,6 +3,15 @@
     <!-- 帖子列表 -->
     <div class="posts-list">
       <div v-for="post in posts" :key="post.id" class="post-item">
+        <div class="post-avatar">
+          <UserAvatar 
+            :username="post.username" 
+            size="small" 
+            :clickable="true"
+            :userId="post.userId"
+            @click="handleAvatarClick"
+          />
+        </div>
         <div class="post-content">
           <div class="post-title">
             <a href="#" class="title-link" @click.prevent="viewPost(post.id)">{{ post.title }}</a>
@@ -13,38 +22,34 @@
           <div class="post-meta">
             <span class="post-label" :class="`label-${getLabelClass(post.label)}`">{{ post.label }}</span>
             <span class="bullet">•</span>
-            <a href="#" class="author-link" @click.prevent="viewAuthor(post.username)">{{ post.username }}</a>
+            <a href="#" class="author-link" @click.prevent="viewAuthor(post.username, post.userId)">{{ post.username }}</a>
             <span class="bullet">•</span>
             <span class="post-time">{{ post.publishTime }}</span>
           </div>
         </div>
         <div class="post-stats">
-          <div 
-            class="like-count" 
-            :class="{ 
-              'liked': post.isLiked, 
-              'liking': likingPosts.has(post.id) 
-            }"
-            @click="handleLike(post.id)"
-          >
+          <div class="like-count" :class="{
+            'liked': post.isLiked,
+            'liking': likingPosts.has(post.id)
+          }" @click="handleLike(post.id)">
             <span class="like-icon">{{ post.isLiked ? '❤️' : '🤍' }}</span>
             <span class="count">{{ formatCount(post.likeCount) }}</span>
           </div>
         </div>
       </div>
     </div>
-    
+
     <!-- 加载状态 -->
     <div v-if="loading" class="loading-indicator">
       <div class="loading-spinner"></div>
       <span>加载中...</span>
     </div>
-    
+
     <!-- 没有更多数据 -->
     <div v-if="noMore && posts.length > 0" class="no-more-indicator">
       没有更多内容了
     </div>
-    
+
     <!-- 空状态 -->
     <div v-if="posts.length === 0 && !loading" class="empty-state">
       暂无内容
@@ -58,11 +63,13 @@ import { useRouter } from 'vue-router'
 import { POST_CATEGORIES } from '@/constants/categories'
 import { articleApi } from '@/api/article'
 import { useUserStore } from '@/stores/user'
+import UserAvatar from '@/components/UserAvatar.vue'
 
 export interface FeedPost {
   id: number
   title: string
   username: string
+  userId?: number
   publishTime: string
   label: string
   likeCount: number
@@ -95,10 +102,10 @@ const isInitialized = ref(false) // 记录是否已初始化过
 
 const handleScroll = () => {
   if (!feedListRef.value || props.loading || props.noMore) return
-  
+
   const { scrollTop, scrollHeight, clientHeight } = document.documentElement
   const threshold = 100 // 距离底部100px时触发加载
-  
+
   if (scrollTop + clientHeight >= scrollHeight - threshold) {
     emit('loadMore')
   }
@@ -113,7 +120,7 @@ onUnmounted(() => {
 })
 
 // 截取内容预览
-const truncateContent = (content: string, maxLength: number = 120): string => {
+const truncateContent = (content: string, maxLength: number = 60): string => {
   if (!content) return ''
   return content.length > maxLength ? content.substring(0, maxLength) + '...' : content
 }
@@ -123,7 +130,7 @@ const getLabelClass = (label: string): string => {
   const labelMap: Record<string, string> = POST_CATEGORIES.reduce((map, category) => {
     const labelKey = category.label
     let styleClass = ''
-    
+
     switch (labelKey) {
       case '技术':
         styleClass = 'tech'
@@ -137,11 +144,11 @@ const getLabelClass = (label: string): string => {
       default:
         styleClass = 'other'
     }
-    
+
     map[labelKey] = styleClass
     return map
   }, {} as Record<string, string>)
-  
+
   return labelMap[label] || 'other'
 }
 
@@ -158,10 +165,20 @@ const viewPost = (postId: number) => {
   router.push({ name: 'ArticleDetail', params: { id: postId.toString() } })
 }
 
+// 处理头像点击
+const handleAvatarClick = (userId?: number, username?: string) => {
+  if (userId) {
+    router.push({ name: 'PublicProfile', params: { userId: userId.toString() } })
+  }
+}
+
 // 查看作者信息
-const viewAuthor = (username: string) => {
-  console.log('查看作者:', username)
-  // TODO: 实现作者主页跳转
+const viewAuthor = (username: string, userId?: number) => {
+  if (userId) {
+    router.push({ name: 'PublicProfile', params: { userId: userId.toString() } })
+  } else {
+    console.log('查看作者:', username)
+  }
 }
 
 // 点赞/取消点赞功能 - 使用新的toggle API
@@ -175,20 +192,20 @@ const handleLike = async (postId: number) => {
 
   // 防止重复点击
   if (likingPosts.value.has(postId)) return
-  
+
   likingPosts.value.add(postId)
-  
+
   // 找到对应的帖子
   const post = props.posts.find(p => p.id === postId)
   if (!post) {
     likingPosts.value.delete(postId)
     return
   }
-  
+
   // 保存原始状态用于回滚
   const originalLikeCount = post.likeCount
   const originalIsLiked = post.isLiked || false
-  
+
   // 乐观更新UI
   if (originalIsLiked) {
     post.likeCount -= 1
@@ -197,15 +214,15 @@ const handleLike = async (postId: number) => {
     post.likeCount += 1
     post.isLiked = true
   }
-  
+
   try {
     // 使用新的toggle API
     const result = await articleApi.toggleLikeArticle(userStore.userId, postId)
-    
+
     if (result.success) {
       // API成功，更新最终状态
       post.isLiked = result.isLiked
-      
+
       // 获取最新的点赞数
       const latestCount = await articleApi.getArticleLikeCount(postId)
       post.likeCount = latestCount
@@ -228,10 +245,10 @@ const handleLike = async (postId: number) => {
 // 初始化帖子点赞状态和点赞数的方法
 const initializeLikeStatus = async () => {
   if (!userStore.isLoggedIn || props.posts.length === 0) return
-  
+
   try {
     console.log('开始初始化点赞状态，帖子数量:', props.posts.length)
-    
+
     // 批量检查用户对这些文章的点赞状态和最新点赞数
     const promises = props.posts.map(async (post) => {
       try {
@@ -239,16 +256,16 @@ const initializeLikeStatus = async () => {
           articleApi.checkLikeStatus(userStore.userId, post.id),
           articleApi.getArticleLikeCount(post.id)
         ])
-        
+
         console.log(`文章${post.id}: 点赞状态=${isLiked}, 点赞数=${likeCount}`)
-        
+
         post.isLiked = isLiked
         post.likeCount = likeCount
       } catch (error) {
         console.error(`初始化文章${post.id}的点赞状态失败:`, error)
       }
     })
-    
+
     await Promise.all(promises)
     isInitialized.value = true
     console.log('点赞状态初始化完成')
@@ -316,12 +333,9 @@ onUnmounted(() => {
   transition: background-color 0.2s ease;
 }
 
-.post-item:hover {
-  background: #f9f9f9;
-}
-
-.post-item:last-child {
-  border-bottom: none;
+.post-avatar {
+  flex-shrink: 0;
+  padding-top: 2px;
 }
 
 .post-content {
@@ -444,7 +458,9 @@ onUnmounted(() => {
 }
 
 /* 加载状态 */
-.loading-indicator, .no-more-indicator, .empty-state {
+.loading-indicator,
+.no-more-indicator,
+.empty-state {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -467,8 +483,13 @@ onUnmounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 768px) {
@@ -476,15 +497,13 @@ onUnmounted(() => {
     gap: 8px;
     padding: 12px;
   }
-  
+
   .title-link {
     font-size: 15px;
   }
-  
+
   .post-meta {
     font-size: 11px;
   }
 }
 </style>
-
-

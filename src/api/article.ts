@@ -1,24 +1,12 @@
 import axios from 'axios'
 
+// ==================== 接口定义 ====================
+
 export interface CreateArticleRequest {
   userId: number
   title: string
   text: string
   select: number
-}
-
-export const createNewPost = async (data: CreateArticleRequest) => {
-  try {
-    const response = await axios.post('/api/articles/new-post', data, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-    return response.data
-  } catch (error) {
-    console.error('API调用失败:', error)
-    throw error
-  }
 }
 
 // 文章接口定义
@@ -83,6 +71,27 @@ export interface GetNewArticlesParams {
   size?: number
 }
 
+// 根据用户ID获取文章请求参数接口
+export interface GetArticlesByUserIdParams {
+  userId: number
+}
+
+// ==================== API方法 ====================
+
+export const createNewPost = async (data: CreateArticleRequest) => {
+  try {
+    const response = await axios.post('/api/articles/new-post', data, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    return response.data
+  } catch (error) {
+    console.error('API调用失败:', error)
+    throw error
+  }
+}
+
 // 获取最新文章的API方法
 export const getNewArticles = async (params: GetNewArticlesParams = {}) => {
   const { page = 0, size = 20 } = params
@@ -98,6 +107,19 @@ export const getNewArticles = async (params: GetNewArticlesParams = {}) => {
   } catch (error) {
     console.error('获取最新文章失败:', error)
     throw error
+  }
+}
+
+// 根据用户ID获取文章的API方法
+export const getArticlesByUserId = async (userId: number): Promise<Article[]> => {
+  try {
+    const response = await axios.post<Article[]>('/api/articles/find-by-user-id', null, {
+      params: { userId }
+    })
+    return response.data
+  } catch (error) {
+    console.error('获取用户文章失败:', error)
+    return []
   }
 }
 
@@ -192,6 +214,7 @@ export const articleApi = {
   toggleLikeArticle,
   checkLikeStatus,
   getArticleLikeCount,
-  getArticleDetail
+  getArticleDetail,
+  getArticlesByUserId
 }
 
