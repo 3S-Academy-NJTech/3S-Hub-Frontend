@@ -7,9 +7,9 @@
           <UserAvatar 
             :username="post.username" 
             size="small" 
-            :clickable="true"
+            :clickable="true" 
             :userId="post.userId"
-            @click="handleAvatarClick"
+            @click="handleAvatarClick(post)"
           />
         </div>
         <div class="post-content">
@@ -22,7 +22,7 @@
           <div class="post-meta">
             <span class="post-label" :class="`label-${getLabelClass(post.label)}`">{{ post.label }}</span>
             <span class="bullet">•</span>
-            <a href="#" class="author-link" @click.prevent="viewAuthor(post.username, post.userId)">{{ post.username }}</a>
+            <a href="#" class="author-link">{{ post.username }}</a>
             <span class="bullet">•</span>
             <span class="post-time">{{ post.publishTime }}</span>
           </div>
@@ -165,22 +165,6 @@ const viewPost = (postId: number) => {
   router.push({ name: 'ArticleDetail', params: { id: postId.toString() } })
 }
 
-// 处理头像点击
-const handleAvatarClick = (userId?: number, username?: string) => {
-  if (userId) {
-    router.push({ name: 'PublicProfile', params: { userId: userId.toString() } })
-  }
-}
-
-// 查看作者信息
-const viewAuthor = (username: string, userId?: number) => {
-  if (userId) {
-    router.push({ name: 'PublicProfile', params: { userId: userId.toString() } })
-  } else {
-    console.log('查看作者:', username)
-  }
-}
-
 // 点赞/取消点赞功能 - 使用新的toggle API
 const handleLike = async (postId: number) => {
   // 检查用户是否登录
@@ -311,6 +295,18 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
 })
+
+// 添加头像点击处理方法
+const handleAvatarClick = (post: FeedPost) => {
+  console.log('Avatar clicked for post:', post)
+  console.log('UserId:', post.userId)
+  
+  if (post.userId) {
+    router.push(`/profile/${post.userId}`)
+  } else {
+    console.warn('No userId found for post:', post)
+  }
+}
 </script>
 
 <style scoped>

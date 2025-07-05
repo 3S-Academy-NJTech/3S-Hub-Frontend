@@ -71,7 +71,7 @@ const handleLogout = () => {
 }
 
 const handleHome = () => {
-  router.push('/profile')
+  router.push(`/profile/${userStore.userId}`)
 }
 
 const handleCreatePost = () => {

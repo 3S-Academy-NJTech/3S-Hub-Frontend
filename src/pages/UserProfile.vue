@@ -83,6 +83,7 @@ import UserAvatar from '@/components/UserAvatar.vue'
 import ArticleCard from '@/components/ArticleCard.vue'
 import { useUserStore } from '@/stores/user'
 import { getArticlesByUserId, type Article } from '@/api/article'
+import { getUserById } from '@/api/user'
 
 interface Props {
   userId?: string
@@ -123,6 +124,37 @@ const totalLikes = computed(() => {
   }, 0)
 })
 
+// 加载用户信息
+const loadUserInfo = async (targetUserId: number) => {
+  if (isCurrentUser.value) {
+    // 当前用户信息已在store中
+    return
+  }
+  
+  try {
+    const userInfo = await getUserById(targetUserId)
+    if (userInfo) {
+      publicUserInfo.value = userInfo
+    } else {
+      // 如果API返回null，使用默认信息
+      publicUserInfo.value = {
+        userName: `用户${targetUserId}`,
+        userShow: '这个人很懒，什么都没有留下',
+        userEmail: '',
+        userTime: '2023-01-01'
+      }
+    }
+  } catch (error) {
+    console.error('加载用户信息失败:', error)
+    publicUserInfo.value = {
+      userName: `用户${targetUserId}`,
+      userShow: '这个人很懒，什么都没有留下',
+      userEmail: '',
+      userTime: '2023-01-01'
+    }
+  }
+}
+
 // 加载用户文章
 const loadUserArticles = async (targetUserId?: number) => {
   const userId = targetUserId || userStore.userId
@@ -134,20 +166,12 @@ const loadUserArticles = async (targetUserId?: number) => {
 
   loading.value = true
   try {
+    // 先加载用户信息
+    await loadUserInfo(userId)
+    
+    // 再加载文章
     const articles = await getArticlesByUserId(userId)
     userArticles.value = articles
-    
-    // 如果是查看其他用户，尝试从文章数据中获取用户信息
-    if (!isCurrentUser.value && articles.length > 0) {
-      // TODO: 这里应该调用专门的获取用户信息API
-      // 暂时使用占位数据
-      publicUserInfo.value = {
-        userName: `用户${userId}`,
-        userShow: '这个人很懒，什么都没有留下',
-        userEmail: '',
-        userTime: '2023-01-01'
-      }
-    }
   } catch (error) {
     console.error('加载用户文章失败:', error)
   } finally {

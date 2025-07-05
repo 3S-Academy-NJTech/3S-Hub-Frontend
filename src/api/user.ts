@@ -1,5 +1,32 @@
 import axios from 'axios'
 
+// ==================== 接口定义 ====================
+
+// 用户注册接口
+export interface RegisterRequest {
+  userName: string
+  userPassword: string
+  userShow: string
+  userEmail: string
+}
+
+// 用户登录接口
+export interface LoginRequest {
+  email: string
+  password: string
+}
+
+// 用户信息接口
+export interface User {
+  userId: number
+  userName: string
+  userEmail: string
+  userTime: string
+  userShow: string
+}
+
+// ==================== API配置 ====================
+
 // 创建axios实例
 const api = axios.create({
   baseURL: '/api/user',
@@ -30,14 +57,9 @@ api.interceptors.response.use(
   }
 )
 
-// 用户注册接口
-export interface RegisterRequest {
-  userName: string
-  userPassword: string
-  userShow: string
-  userEmail: string
-}
+// ==================== API方法 ====================
 
+// 用户注册的API方法
 export const userRegister = (data: RegisterRequest): Promise<number> => {
   const formData = new FormData()
   formData.append('userName', data.userName)
@@ -52,20 +74,7 @@ export const userRegister = (data: RegisterRequest): Promise<number> => {
   })
 }
 
-// 用户登录接口
-export interface LoginRequest {
-  email: string
-  password: string
-}
-
-export interface User {
-  userId: number
-  userName: string
-  userEmail: string
-  userTime: string
-  userShow: string
-}
-
+// 用户登录的API方法
 export const userLogin = (data: LoginRequest): Promise<User> => {
   const formData = new FormData()
   formData.append('email', data.email)
@@ -76,4 +85,22 @@ export const userLogin = (data: LoginRequest): Promise<User> => {
       'Content-Type': 'multipart/form-data'
     }
   })
+}
+
+// 根据用户ID获取用户信息的API方法
+export const getUserById = async (userId: number): Promise<User | null> => {
+  try {
+    const response = await axios.get<User>(`/api/user/${userId}`)
+    return response.data
+  } catch (error) {
+    console.error('获取用户信息失败:', error)
+    return null
+  }
+}
+
+// 导出用户API对象
+export const userApi = {
+  userRegister,
+  userLogin,
+  getUserById
 }

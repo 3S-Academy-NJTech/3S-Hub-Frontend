@@ -24,10 +24,10 @@ const routes = [
     props: true
   },
   {
-    path: '/profile',
-    name: 'UserProfile',
+    path: '/profile/:userId',
+    name: 'UserProfileById',
     component: UserProfile,
-    meta: { requiresAuth: true }
+    props: true
   }
 ]
 

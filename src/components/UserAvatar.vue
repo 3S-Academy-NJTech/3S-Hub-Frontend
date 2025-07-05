@@ -1,8 +1,9 @@
 <template>
   <div 
     class="user-avatar" 
-    :class="sizeClass"
+    :class="[sizeClass, { 'clickable': clickable }]"
     :style="{ backgroundColor: avatarColor }"
+    @click="handleClick"
   >
     <div class="avatar-text">{{ displayText }}</div>
   </div>
@@ -10,15 +11,21 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 
 interface Props {
   username: string
   size?: 'small' | 'medium' | 'large'
+  userId?: number
+  clickable?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  size: 'medium'
+  size: 'medium',
+  clickable: false
 })
+
+const router = useRouter()
 
 const avatarColor = computed(() => {
   if (!props.username) return '#8b5cf6'
@@ -44,6 +51,12 @@ const displayText = computed(() => {
 const sizeClass = computed(() => {
   return `avatar-${props.size}`
 })
+
+const handleClick = () => {
+  if (props.clickable && props.userId) {
+    router.push(`/profile/${props.userId}`)
+  }
+}
 </script>
 
 <style scoped>
@@ -86,5 +99,19 @@ const sizeClass = computed(() => {
 
 .avatar-large .avatar-text {
   font-size: 22px;
+}
+
+.clickable {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.clickable:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.clickable:active {
+  transform: scale(0.98);
 }
 </style>

@@ -58,6 +58,7 @@ const transformArticleData = (items: ViewArtAndUser[]): FeedPost[] => {
     id: item.article.artId,
     title: item.article.artTitle,
     username: item.user.userName,
+    userId: item.user.userId,  // 添加userId字段
     publishTime: item.article.artCreTime,
     label: articleTypeMap[item.article.artTypeId] || '其他',
     likeCount: item.article.artLikeNum || 0,
