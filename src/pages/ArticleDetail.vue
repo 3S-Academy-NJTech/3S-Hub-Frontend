@@ -28,7 +28,9 @@
           <div class="author-info">
             <UserAvatar 
               :username="articleData.user.userName" 
-              size="medium" 
+              :userId="articleData.user.userId"
+              size="medium"
+              :clickable="true"
             />
             <div class="author-details">
               <span class="author-name">{{ articleData.user.userName }}</span>

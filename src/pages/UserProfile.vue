@@ -82,7 +82,7 @@ import MainLayout from '@/layouts/MainLayout.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import ArticleCard from '@/components/ArticleCard.vue'
 import { useUserStore } from '@/stores/user'
-import { getArticlesByUserId, type Article } from '@/api/article'
+import { getArticlesByUserId, getArticleLikeCount, type Article } from '@/api/article'
 import { getUserById } from '@/api/user'
 
 interface Props {
@@ -97,6 +97,7 @@ const router = useRouter()
 const userArticles = ref<Article[]>([])
 const loading = ref(false)
 const publicUserInfo = ref<any>(null)
+const totalLikes = ref(0)
 
 // 计算当前查看的是否为当前用户
 const isCurrentUser = computed(() => {
@@ -117,12 +118,31 @@ const displayUserInfo = computed(() => {
   }
 })
 
-// 计算总点赞数
-const totalLikes = computed(() => {
-  return userArticles.value.reduce((total, article) => {
-    return total + (article.artLikeNum || 0)
-  }, 0)
-})
+// 计算并获取总点赞数
+const calculateTotalLikes = async () => {
+  if (userArticles.value.length === 0) {
+    totalLikes.value = 0
+    return
+  }
+
+  try {
+    const likeCountPromises = userArticles.value.map(article => 
+      getArticleLikeCount(article.artId).catch(error => {
+        console.error(`获取文章${article.artId}点赞数失败:`, error)
+        return article.artLikeNum || 0
+      })
+    )
+    
+    const likeCounts = await Promise.all(likeCountPromises)
+    totalLikes.value = likeCounts.reduce((total, count) => total + count, 0)
+  } catch (error) {
+    console.error('计算总点赞数失败:', error)
+    // 降级使用文章数据中的点赞数
+    totalLikes.value = userArticles.value.reduce((total, article) => {
+      return total + (article.artLikeNum || 0)
+    }, 0)
+  }
+}
 
 // 加载用户信息
 const loadUserInfo = async (targetUserId: number) => {
@@ -172,6 +192,9 @@ const loadUserArticles = async (targetUserId?: number) => {
     // 再加载文章
     const articles = await getArticlesByUserId(userId)
     userArticles.value = articles
+    
+    // 计算总点赞数
+    await calculateTotalLikes()
   } catch (error) {
     console.error('加载用户文章失败:', error)
   } finally {

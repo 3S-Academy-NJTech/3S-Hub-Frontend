@@ -22,7 +22,7 @@
           <div class="post-meta">
             <span class="post-label" :class="`label-${getLabelClass(post.label)}`">{{ post.label }}</span>
             <span class="bullet">•</span>
-            <a href="#" class="author-link">{{ post.username }}</a>
+            <a href="#" class="author-link" @click.prevent="handleUsernameClick(post)">{{ post.username }}</a>
             <span class="bullet">•</span>
             <span class="post-time">{{ post.publishTime }}</span>
           </div>
@@ -301,6 +301,15 @@ const handleAvatarClick = (post: FeedPost) => {
   console.log('Avatar clicked for post:', post)
   console.log('UserId:', post.userId)
   
+  if (post.userId) {
+    router.push(`/profile/${post.userId}`)
+  } else {
+    console.warn('No userId found for post:', post)
+  }
+}
+
+// 添加用户名点击处理方法
+const handleUsernameClick = (post: FeedPost) => {
   if (post.userId) {
     router.push(`/profile/${post.userId}`)
   } else {

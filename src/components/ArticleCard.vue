@@ -10,7 +10,7 @@
     <div class="article-footer">
       <div class="article-stats">
         <span class="like-count">
-          ❤️ {{ article.artLikeNum || 0 }}
+          ❤️ {{ likeCount }}
         </span>
       </div>
       
@@ -24,8 +24,9 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue'
+import { defineProps, defineEmits, ref, onMounted } from 'vue'
 import type { Article } from '@/api/article'
+import { getArticleLikeCount } from '@/api/article'
 
 interface Props {
   article: Article
@@ -33,6 +34,9 @@ interface Props {
 
 const props = defineProps<Props>()
 const emit = defineEmits(['view'])
+
+// 响应式数据
+const likeCount = ref(0)
 
 // 格式化日期
 const formatDate = (dateString: string) => {
@@ -53,10 +57,26 @@ const truncateContent = (content: string) => {
   return content.substring(0, maxLength) + '...'
 }
 
+// 获取点赞数
+const fetchLikeCount = async () => {
+  try {
+    const count = await getArticleLikeCount(props.article.artId)
+    likeCount.value = count
+  } catch (error) {
+    console.error('获取点赞数失败:', error)
+    likeCount.value = props.article.artLikeNum || 0
+  }
+}
+
 // 查看文章
 const viewArticle = () => {
   emit('view', props.article.artId)
 }
+
+// 组件挂载时获取点赞数
+onMounted(() => {
+  fetchLikeCount()
+})
 </script>
 
 <style scoped>
