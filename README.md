@@ -94,3 +94,48 @@
 *   **引入UI组件库:** 集成 Element Plus 或 Naive UI 等成熟的组件库，以提升开发效率和UI美观度。
 *   **优化性能:** 对图片等静态资源进行懒加载，并对代码进行 Code Splitting，以减少首屏加载时间。
 *   **增加单元测试:** 使用 Vitest 或 Jest 等测试框架，为核心组件和工具函数编写单元测试，以保证代码质量。
+
+## 项目结构
+
+```
+/
+├── public/ # 静态资源目录
+├── src/ # 源代码目录
+│ ├── api/ # API 请求模块
+│ ├── assets/ # 静态资源（图片、样式等）
+│ ├── components/ # 可复用组件
+│ ├── constants/ # 常量
+│ ├── layouts/ # 布局组件
+│ ├── pages/ # 页面组件
+│ ├── router/ # 路由配置
+│ ├── stores/ # 状态管理 (Pinia)
+│ ├── utils/ # 工具函数
+│ ├── views/ # 视图组件
+│ ├── App.vue # 根组件
+│ └── main.ts # 应用入口文件
+├── .gitignore # Git 忽略文件
+├── index.html # HTML 入口文件
+├── package.json # 项目依赖和脚本
+└── vite.config.ts # Vite 配置文件
+```
+
+### 解释
+
+*   **`public/`**: 存放不会被 Webpack 处理的静态资源，例如 `favicon.ico`。
+*   **`src/`**: 项目的核心代码目录。
+    *   **`api/`**: 存放所有与后端交互的 API 请求函数。
+    *   **`assets/`**: 存放图片、字体、样式表等静态资源。
+    *   **`components/`**: 存放可复用的 Vue 组件，例如头部、底部、文章卡片等。
+    *   **`constants/`**: 存放项目中使用到的常量。
+    *   **`layouts/`**: 存放布局组件，用于构建页面的整体结构。
+    *   **`pages/`**: 存放页面级别的组件，例如首页、文章详情页、登录页等。
+    *   **`router/`**: 存放 Vue Router 的路由配置文件。
+    *   **`stores/`**: 存放 Pinia 的状态管理模块。
+    *   **`utils/`**: 存放工具函数。
+    *   **`views/`**: 存放视图组件，通常是页面的主要内容区域。
+    *   **`App.vue`**: 应用的根组件。
+    *   **`main.ts`**: 应用的入口文件，用于初始化 Vue 实例、路由和状态管理。
+*   **`.gitignore`**: 配置 Git 版本控制忽略的文件和目录。
+*   **`index.html`**: 单页应用的 HTML 入口文件。
+*   **`package.json`**: 定义项目的依赖库和可执行的脚本命令。
+*   **`vite.config.ts`**: Vite 构建工具的配置文件。
